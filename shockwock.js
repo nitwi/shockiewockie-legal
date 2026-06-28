@@ -235,18 +235,18 @@
     let critChance = 0.05;
     let critMultiplier = 5;
     let autoClickers = 0;
-    let autoPower = 1;
+    let autoPower = 5;
     let elapsed = 0;
     const { body } = gameShell("Shockwock Clicker", "Endless session");
     body.innerHTML = `
-      <div class="shockwock-hud"><span>Time: <strong data-time>0:00</strong></span><span>Shockwocks: <strong data-score>0</strong></span><span>Total: <strong data-total>0</strong></span><span>Rebirths: <strong data-rebirths>0</strong></span></div>
+      <div class="shockwock-hud"><span>Time: <strong data-time>0:00</strong></span><span>Shockwocks: <strong data-score>0</strong></span><span>Total: <strong data-total>0</strong></span><span>Clicks: <strong data-clicks>0</strong></span><span>Rebirths: <strong data-rebirths>0</strong></span></div>
       <button class="shockwock-clicker-button" type="button" aria-label="Click shockwock"><img src="${src}" alt=""></button>
       <div class="shockwock-shop">
-        <button type="button" data-buy="power">Click Power +1 <span data-power-cost>25</span></button>
-        <button type="button" data-buy="crit">Crit Chance +5% <span data-crit-cost>40</span></button>
-        <button type="button" data-buy="critPower">Crit Power +1x <span data-crit-power-cost>120</span></button>
-        <button type="button" data-buy="auto">Auto Clicker +1 <span data-auto-cost>60</span></button>
-        <button type="button" data-buy="autoPower">Auto Power +1 <span data-auto-power-cost>180</span></button>
+        <button type="button" data-buy="power">Click Power +1 <span data-power-cost>20</span></button>
+        <button type="button" data-buy="crit">Crit Chance +5% <span data-crit-cost>35</span></button>
+        <button type="button" data-buy="critPower">Crit Power +1x <span data-crit-power-cost>100</span></button>
+        <button type="button" data-buy="auto">Auto Clicker +1 <span data-auto-cost>45</span></button>
+        <button type="button" data-buy="autoPower">Auto Power +5/s <span data-auto-power-cost>140</span></button>
         <button type="button" data-buy="rebirth">Rebirth for +1 base <span data-rebirth-cost>1000</span></button>
       </div>
       <p class="shockwock-clicker-note">Base ${baseRate}/click · Click power ${clickPower} · Auto ${autoClickers * autoPower}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}</p>
@@ -264,12 +264,13 @@
     const autoPowerCostNode = body.querySelector("[data-auto-power-cost]");
     const rebirthCostNode = body.querySelector("[data-rebirth-cost]");
     const button = body.querySelector(".shockwock-clicker-button");
-    let powerCost = 25;
-    let critCost = 40;
-    let critPowerCost = 120;
-    let autoCost = 60;
-    let autoPowerCost = 180;
+    let powerCost = 20;
+    let critCost = 35;
+    let critPowerCost = 100;
+    let autoCost = 45;
+    let autoPowerCost = 140;
     let rebirthCost = 1000;
+    let autoFraction = 0;
 
     const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
@@ -310,35 +311,35 @@
       if (shockwocks < powerCost) return;
       shockwocks -= powerCost;
       clickPower += 1;
-      powerCost = Math.ceil(powerCost * 1.8);
+      powerCost = Math.ceil(powerCost * 1.55 + clickPower * 8);
       update();
     });
     body.querySelector('[data-buy="crit"]').addEventListener("click", () => {
       if (shockwocks < critCost) return;
       shockwocks -= critCost;
       critChance = Math.min(0.65, critChance + 0.05);
-      critCost = Math.ceil(critCost * 1.9);
+      critCost = Math.ceil(critCost * 1.7 + Math.round(critChance * 120));
       update();
     });
     body.querySelector('[data-buy="critPower"]').addEventListener("click", () => {
       if (shockwocks < critPowerCost) return;
       shockwocks -= critPowerCost;
       critMultiplier += 1;
-      critPowerCost = Math.ceil(critPowerCost * 2.2);
+      critPowerCost = Math.ceil(critPowerCost * 1.85 + critMultiplier * 20);
       update();
     });
     body.querySelector('[data-buy="auto"]').addEventListener("click", () => {
       if (shockwocks < autoCost) return;
       shockwocks -= autoCost;
       autoClickers += 1;
-      autoCost = Math.ceil(autoCost * 2.1);
+      autoCost = Math.ceil(autoCost * 1.6 + autoClickers * 20);
       update();
     });
     body.querySelector('[data-buy="autoPower"]').addEventListener("click", () => {
       if (shockwocks < autoPowerCost) return;
       shockwocks -= autoPowerCost;
-      autoPower += 1;
-      autoPowerCost = Math.ceil(autoPowerCost * 2.35);
+      autoPower += 5 + rebirths;
+      autoPowerCost = Math.ceil(autoPowerCost * 1.8 + autoPower * 18);
       update();
     });
     body.querySelector('[data-buy="rebirth"]').addEventListener("click", () => {
@@ -346,26 +347,32 @@
       shockwocks = 0;
       clicks = 0;
       rebirths += 1;
-      baseRate += 1;
+      baseRate += 1 + Math.floor(rebirths / 2);
       clickPower = 1;
       critChance = 0.05;
       critMultiplier = 5;
       autoClickers = 0;
-      autoPower = 1;
-      powerCost = 25 * (rebirths + 1);
-      critCost = 40 * (rebirths + 1);
-      critPowerCost = 120 * (rebirths + 1);
-      autoCost = 60 * (rebirths + 1);
-      autoPowerCost = 180 * (rebirths + 1);
-      rebirthCost = Math.ceil(rebirthCost * 2.5);
+      autoPower = 5 + rebirths * 2;
+      autoFraction = 0;
+      powerCost = 20 * (rebirths + 1);
+      critCost = 35 * (rebirths + 1);
+      critPowerCost = 100 * (rebirths + 1);
+      autoCost = 45 * (rebirths + 1);
+      autoPowerCost = 140 * (rebirths + 1);
+      rebirthCost = 1000 * (10 ** rebirths);
       showFloat(window.innerWidth / 2, window.innerHeight / 2, `REBIRTH ${rebirths}`);
       update();
     });
 
     const auto = setInterval(() => {
-      const amount = autoClickers * autoPower;
-      if (amount > 0) addShockwocks(amount, window.innerWidth - 90, 90, `+${amount}/s`);
-    }, 1000);
+      const perSecond = autoClickers * autoPower;
+      if (perSecond <= 0) return;
+      autoFraction += perSecond / 4;
+      const amount = Math.floor(autoFraction);
+      if (amount <= 0) return;
+      autoFraction -= amount;
+      addShockwocks(amount, window.innerWidth - 90, 90, `+${amount}`);
+    }, 250);
     const timer = setInterval(() => {
       elapsed += document.hidden ? 0 : 1;
       update();
