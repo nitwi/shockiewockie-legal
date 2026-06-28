@@ -136,6 +136,10 @@ body {
   outline: none;
 }
 
+.shockwock-target.in-arena {
+  position: absolute;
+}
+
 .shockwock-counter {
   position: fixed;
   top: 16px;
@@ -161,6 +165,129 @@ body {
   background: radial-gradient(circle, rgba(41, 248, 255, 0.08), transparent 34rem);
 }
 
+.shockwock-game {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle, rgba(41, 248, 255, 0.08), rgba(2, 6, 23, 0.76));
+}
+
+.shockwock-game-card {
+  position: relative;
+  width: min(760px, calc(100vw - 32px));
+  padding: 24px;
+  background: rgba(2, 6, 23, 0.9);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  box-shadow: 0 24px 90px rgba(0, 0, 0, 0.5), 0 0 50px rgba(41, 248, 255, 0.13);
+  backdrop-filter: blur(10px);
+}
+
+.shockwock-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--card-2);
+  cursor: pointer;
+}
+
+.shockwock-game-title {
+  margin: 0;
+  color: var(--accent);
+  font-size: 1.35rem;
+  font-weight: 900;
+}
+
+.shockwock-game-subtitle {
+  margin: 4px 0 18px;
+}
+
+.shockwock-hud,
+.shockwock-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.shockwock-hud span,
+.shockwock-stats div {
+  padding: 10px;
+  background: rgba(41, 248, 255, 0.07);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.shockwock-stats strong {
+  display: block;
+  color: var(--accent);
+  font-size: 1.5rem;
+}
+
+.shockwock-stats span {
+  color: var(--muted);
+}
+
+.shockwock-arena {
+  position: relative;
+  height: min(52vh, 430px);
+  min-height: 280px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background: rgba(13, 27, 45, 0.72);
+}
+
+.shockwock-arena.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 10px;
+}
+
+.shockwock-grid-cell {
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: rgba(41, 248, 255, 0.06);
+  cursor: crosshair;
+}
+
+.shockwock-grid-cell img {
+  width: min(74px, 18vw);
+  height: min(74px, 18vw);
+  object-fit: contain;
+}
+
+.shockwock-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 16px;
+}
+
+.shockwock-actions.vertical {
+  flex-direction: column;
+}
+
+.shockwock-actions button,
+.shockwock-shop button {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--text);
+  background: var(--card-2);
+  padding: 10px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
 .shockwock-clicker-card {
   pointer-events: auto;
   width: min(420px, calc(100vw - 32px));
@@ -171,6 +298,12 @@ body {
   border-radius: 26px;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48), 0 0 50px rgba(41, 248, 255, 0.12);
   backdrop-filter: blur(10px);
+}
+
+.shockwock-shop {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
 }
 
 .shockwock-clicker-title {
