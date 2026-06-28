@@ -241,20 +241,21 @@
     let elapsed = 0;
     const { body } = gameShell("Shockwock Clicker", "Endless session");
     body.innerHTML = `
-      <div class="shockwock-hud"><span>Time: <strong data-time>0:00</strong></span><span>Shockwocks: <strong data-score>0</strong></span><span>Total: <strong data-total>0</strong></span><span>Clicks: <strong data-clicks>0</strong></span><span>Rebirths: <strong data-rebirths>0</strong></span></div>
+      <div class="shockwock-hud"><span>Time: <strong data-time>0:00</strong></span><span>Shockwocks: <strong data-score>0</strong></span><span>Total: <strong data-total>0</strong></span><span>SPS: <strong data-sps>0</strong></span><span>Clicks: <strong data-clicks>0</strong></span><span>Rebirths: <strong data-rebirths>0</strong></span></div>
       <button class="shockwock-clicker-button" type="button" aria-label="Click shockwock"><img src="${src}" alt=""></button>
       <div class="shockwock-shop">
-        <button type="button" data-buy="power">Click Power +1 <span data-power-cost>20</span></button>
+        <button type="button" data-buy="power">Click Power +1 per click <span data-power-cost>20</span></button>
         <button type="button" data-buy="crit">Crit Chance +5% <span data-crit-cost>35</span></button>
-        <button type="button" data-buy="critPower">Crit Power +1x <span data-crit-power-cost>100</span></button>
-        <button type="button" data-buy="auto">Auto Clicker +1 <span data-auto-cost>45</span></button>
-        <button type="button" data-buy="autoPower">Auto Power +5/s <span data-auto-power-cost>140</span></button>
-        <button type="button" data-buy="rebirth">Rebirth for +1 base <span data-rebirth-cost>1000</span></button>
+        <button type="button" data-buy="critPower">Crit Multiplier +1x <span data-crit-power-cost>100</span></button>
+        <button type="button" data-buy="auto">Auto Clicker +1 unit <span data-auto-cost>45</span></button>
+        <button type="button" data-buy="autoPower">Auto Power +5 per unit/s <span data-auto-power-cost>140</span></button>
+        <button type="button" data-buy="rebirth">Rebirth: double base multiplier <span data-rebirth-cost>1000</span></button>
       </div>
       <p class="shockwock-clicker-note">Rebirth x${rebirthMultiplier} · Click ${rebirthMultiplier * baseRate * clickPower}/click · Auto ${autoClickers * autoPower * rebirthMultiplier}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}</p>
     `;
     const scoreNode = body.querySelector("[data-score]");
     const totalNode = body.querySelector("[data-total]");
+    const spsNode = body.querySelector("[data-sps]");
     const clicksNode = body.querySelector("[data-clicks]");
     const timeNode = body.querySelector("[data-time]");
     const rebirthNode = body.querySelector("[data-rebirths]");
@@ -279,6 +280,7 @@
     const update = () => {
       scoreNode.textContent = String(Math.floor(shockwocks));
       totalNode.textContent = String(Math.floor(totalShockwocks));
+      spsNode.textContent = String(autoClickers * autoPower * rebirthMultiplier);
       clicksNode.textContent = String(clicks);
       timeNode.textContent = formatTime(elapsed);
       rebirthNode.textContent = String(rebirths);
