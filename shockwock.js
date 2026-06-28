@@ -1,10 +1,11 @@
 (() => {
   const src = "https://cdn.discordapp.com/emojis/1513264198962905159.png?size=128&quality=lossless";
-  const modes = ["fade", "bounce", "aim"];
+  const modes = ["fade", "bounce", "aim", "clicker"];
   const mode = modes[Math.floor(Math.random() * modes.length)];
   let fadeClicks = 0;
   let score = 0;
   let counter = null;
+  let clicker = null;
 
   const randomPosition = (size) => ({
     x: Math.random() * Math.max(1, window.innerWidth - size),
@@ -103,10 +104,50 @@
     document.body.appendChild(target);
   };
 
+  const showFloat = (x, y, text = "+1") => {
+    const float = document.createElement("div");
+    float.className = "shockwock-float";
+    float.textContent = text;
+    float.style.left = `${x}px`;
+    float.style.top = `${y}px`;
+    document.body.appendChild(float);
+    setTimeout(() => float.remove(), 850);
+  };
+
+  const openClicker = () => {
+    if (clicker) return;
+    let clicks = 0;
+    clicker = document.createElement("div");
+    clicker.className = "shockwock-clicker";
+    clicker.innerHTML = `
+      <div class="shockwock-clicker-card">
+        <p class="shockwock-clicker-title">Shockwock Clicker</p>
+        <p class="shockwock-clicker-score">shockwocks: <span>0</span></p>
+        <button class="shockwock-clicker-button" type="button" aria-label="Click shockwock">
+          <img src="${src}" alt="">
+        </button>
+      </div>
+    `;
+    document.body.appendChild(clicker);
+
+    const scoreText = clicker.querySelector(".shockwock-clicker-score span");
+    const button = clicker.querySelector(".shockwock-clicker-button");
+    button.addEventListener("click", (event) => {
+      clicks += 1;
+      scoreText.textContent = String(clicks);
+      button.classList.remove("pop");
+      void button.offsetWidth;
+      button.classList.add("pop");
+      showFloat(event.clientX, event.clientY, clicks % 25 === 0 ? "+25!" : "+1");
+      if (clicks % 10 === 0) spawnBouncer();
+    });
+  };
+
   const activate = () => {
     if (mode === "fade") fadeIn();
     if (mode === "bounce") spawnBouncer();
     if (mode === "aim") spawnTarget();
+    if (mode === "clicker") openClicker();
   };
 
   const attach = () => {
