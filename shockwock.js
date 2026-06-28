@@ -9,6 +9,24 @@
     y: Math.random() * Math.max(1, window.innerHeight - size)
   });
 
+  const burstConfetti = (x, y) => {
+    const colors = ["#29f8ff", "#9ffbff", "#ffffff", "#7dd3fc", "#c084fc"];
+    for (let index = 0; index < 22; index += 1) {
+      const piece = document.createElement("span");
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 42 + Math.random() * 92;
+      piece.className = "shockwock-confetti";
+      piece.style.left = `${x}px`;
+      piece.style.top = `${y}px`;
+      piece.style.background = colors[index % colors.length];
+      piece.style.setProperty("--tx", `${Math.cos(angle) * distance}px`);
+      piece.style.setProperty("--ty", `${Math.sin(angle) * distance}px`);
+      piece.style.setProperty("--rot", `${Math.random() * 720 - 360}deg`);
+      document.body.appendChild(piece);
+      setTimeout(() => piece.remove(), 950);
+    }
+  };
+
   const removeExistingGame = () => {
     document.querySelectorAll(".shockwock-game, .shockwock-counter").forEach((node) => node.remove());
   };
@@ -35,14 +53,19 @@
       y += dy;
       rotation += spin;
 
-      if (x <= 0 || x >= maxX) {
+      const hitX = x <= 0 || x >= maxX;
+      const hitY = y <= 0 || y >= maxY;
+
+      if (hitX) {
         dx *= -1;
         x = Math.max(0, Math.min(maxX, x));
       }
-      if (y <= 0 || y >= maxY) {
+      if (hitY) {
         dy *= -1;
         y = Math.max(0, Math.min(maxY, y));
       }
+
+      if (hitX && hitY) burstConfetti(x + size / 2, y + size / 2);
 
       cat.style.transform = `translate(${x}px, ${y}px) rotate(${rotation}deg)`;
       requestAnimationFrame(tick);

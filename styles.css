@@ -110,6 +110,21 @@ body {
   filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.35));
 }
 
+.shockwock-confetti {
+  position: fixed;
+  width: 8px;
+  height: 14px;
+  z-index: 10002;
+  pointer-events: none;
+  border-radius: 3px;
+  animation: shockwock-confetti 900ms ease-out forwards;
+}
+
+@keyframes shockwock-confetti {
+  from { opacity: 1; transform: translate(0, 0) rotate(0); }
+  to { opacity: 0; transform: translate(var(--tx), var(--ty)) rotate(var(--rot)); }
+}
+
 .shockwock-fade-overlay {
   position: fixed;
   inset: 0;
