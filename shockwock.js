@@ -1,6 +1,6 @@
 (() => {
   const src = "https://cdn.discordapp.com/emojis/1513264198962905159.png?size=128&quality=lossless";
-  const modes = ["fade", "bounce", "aim", "clicker", "cps"];
+  const modes = ["fade", "bounce", "aim", "clicker", "cps", "breaker"];
   const mode = modes[Math.floor(Math.random() * modes.length)];
   let fadeClicks = 0;
 
@@ -481,12 +481,143 @@
     });
   };
 
+  const openBrickBreaker = () => {
+    const { body } = gameShell("Shockwock Brick Breaker", "Move the stretched shockwock paddle and clear every shockwock brick.");
+    body.innerHTML = `
+      <div class="shockwock-hud"><span>Score: <strong data-score>0</strong></span><span>Bricks: <strong data-left>24</strong></span><span>Lives: <strong data-lives>3</strong></span></div>
+      <div class="shockwock-breaker" tabindex="0" aria-label="Shockwock Brick Breaker game area">
+        <div class="shockwock-bricks"></div>
+        <img class="shockwock-ball" src="${src}" alt="">
+        <div class="shockwock-paddle"><img src="${src}" alt=""></div>
+      </div>
+      <p class="shockwock-clicker-note">Move mouse or drag/tap to control the paddle. Click the arena to launch.</p>
+    `;
+
+    const arena = body.querySelector(".shockwock-breaker");
+    const brickLayer = body.querySelector(".shockwock-bricks");
+    const ball = body.querySelector(".shockwock-ball");
+    const paddle = body.querySelector(".shockwock-paddle");
+    const scoreNode = body.querySelector("[data-score]");
+    const leftNode = body.querySelector("[data-left]");
+    const livesNode = body.querySelector("[data-lives]");
+    const rows = 4;
+    const cols = 6;
+    let score = 0;
+    let lives = 3;
+    let launched = false;
+    let ballX = 0;
+    let ballY = 0;
+    let dx = 3.2;
+    let dy = -3.4;
+    let paddleX = 0;
+    let animation = null;
+
+    const bricks = [];
+    for (let index = 0; index < rows * cols; index += 1) {
+      const brick = document.createElement("button");
+      brick.className = "shockwock-brick";
+      brick.type = "button";
+      brick.innerHTML = `<img src="${src}" alt="Shockwock brick">`;
+      brickLayer.appendChild(brick);
+      bricks.push(brick);
+    }
+
+    const updateHud = () => {
+      scoreNode.textContent = String(score);
+      leftNode.textContent = String(bricks.filter((brick) => !brick.classList.contains("broken")).length);
+      livesNode.textContent = String(lives);
+    };
+    const bounds = () => arena.getBoundingClientRect();
+    const render = () => {
+      paddle.style.transform = `translateX(${paddleX}px)`;
+      ball.style.transform = `translate(${ballX}px, ${ballY}px) rotate(${performance.now() / 5}deg)`;
+    };
+    const resetBall = () => {
+      const rect = bounds();
+      paddleX = Math.max(0, rect.width / 2 - 55);
+      ballX = paddleX + 48;
+      ballY = rect.height - 76;
+      dx = (Math.random() < 0.5 ? -1 : 1) * 3.2;
+      dy = -3.4;
+      launched = false;
+      render();
+    };
+    const setPaddle = (clientX) => {
+      const rect = bounds();
+      paddleX = Math.max(0, Math.min(rect.width - 110, clientX - rect.left - 55));
+      if (!launched) ballX = paddleX + 48;
+      render();
+    };
+
+    arena.addEventListener("mousemove", (event) => setPaddle(event.clientX));
+    arena.addEventListener("touchmove", (event) => {
+      event.preventDefault();
+      setPaddle(event.touches[0].clientX);
+    }, { passive: false });
+    arena.addEventListener("click", () => { launched = true; });
+
+    const finish = (won) => {
+      cancelAnimationFrame(animation);
+      resultScreen("Shockwock Brick Breaker", [[won ? "Cleared" : "Score", won ? "All bricks" : score], ["Score", score], ["Lives", lives]], openBrickBreaker, () => {
+        removeExistingGame();
+        openBrickBreaker();
+      });
+    };
+
+    const tick = () => {
+      const rect = bounds();
+      if (launched) {
+        ballX += dx;
+        ballY += dy;
+        if (ballX <= 0 || ballX >= rect.width - 28) dx *= -1;
+        if (ballY <= 0) dy *= -1;
+
+        const ballRect = ball.getBoundingClientRect();
+        const paddleRect = paddle.getBoundingClientRect();
+        if (ballRect.bottom >= paddleRect.top && ballRect.top <= paddleRect.bottom && ballRect.right >= paddleRect.left && ballRect.left <= paddleRect.right && dy > 0) {
+          dy *= -1;
+          const hitOffset = (ballRect.left + ballRect.width / 2 - (paddleRect.left + paddleRect.width / 2)) / (paddleRect.width / 2);
+          dx = Math.max(-5.2, Math.min(5.2, dx + hitOffset * 1.6));
+          ballY = rect.height - 84;
+        }
+
+        for (const brick of bricks) {
+          if (brick.classList.contains("broken")) continue;
+          const brickRect = brick.getBoundingClientRect();
+          if (ballRect.bottom >= brickRect.top && ballRect.top <= brickRect.bottom && ballRect.right >= brickRect.left && ballRect.left <= brickRect.right) {
+            brick.classList.add("broken");
+            dy *= -1;
+            score += 10;
+            burstConfetti(brickRect.left + brickRect.width / 2, brickRect.top + brickRect.height / 2);
+            updateHud();
+            break;
+          }
+        }
+
+        if (!bricks.some((brick) => !brick.classList.contains("broken"))) return finish(true);
+        if (ballY > rect.height + 20) {
+          lives -= 1;
+          updateHud();
+          if (lives <= 0) return finish(false);
+          resetBall();
+        }
+      }
+      render();
+      animation = requestAnimationFrame(tick);
+    };
+
+    updateHud();
+    resetBall();
+    tick();
+  };
+
   const activate = () => {
     if (mode === "fade") fadeIn();
     if (mode === "bounce") spawnBouncer();
     if (mode === "aim") openAimMenu();
     if (mode === "clicker") openClicker();
     if (mode === "cps") openCpsMenu();
+    if (mode === "breaker") openBrickBreaker();
   };
 
   const attach = () => {
