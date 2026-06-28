@@ -248,6 +248,7 @@ body {
 .shockwock-arena.grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
   gap: 10px;
   padding: 10px;
 }
@@ -255,14 +256,27 @@ body {
 .shockwock-grid-cell {
   border: 1px solid var(--border);
   border-radius: 18px;
-  background: rgba(41, 248, 255, 0.06);
+  background: rgba(41, 248, 255, 0.10);
   cursor: crosshair;
+  animation: shockwock-target-pop 120ms ease-out;
+}
+
+.shockwock-grid-cell.active:hover,
+.shockwock-grid-cell.active:focus-visible {
+  border-color: var(--accent);
+  background: rgba(41, 248, 255, 0.18);
+  outline: none;
 }
 
 .shockwock-grid-cell img {
   width: min(74px, 18vw);
   height: min(74px, 18vw);
   object-fit: contain;
+}
+
+@keyframes shockwock-target-pop {
+  from { transform: scale(0.72); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .shockwock-actions {
@@ -302,8 +316,14 @@ body {
 
 .shockwock-shop {
   display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   gap: 10px;
   margin-top: 18px;
+}
+
+.shockwock-clicker-note {
+  margin: 14px 0 0;
+  font-size: 0.92rem;
 }
 
 .shockwock-clicker-title {
@@ -335,6 +355,16 @@ body {
 
 .shockwock-clicker-button:active,
 .shockwock-clicker-button.pop {
+  animation: shockwock-pop 120ms ease-out;
+}
+
+@keyframes shockwock-pop {
+  0% { transform: scale(1) rotate(0); }
+  45% { transform: scale(0.92) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+
+.shockwock-clicker-button:active {
   transform: scale(0.92) rotate(-4deg);
 }
 

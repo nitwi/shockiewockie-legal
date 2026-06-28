@@ -109,6 +109,7 @@
     let shots = 0;
     let timeLeft = duration;
     let activeTargets = [];
+    let activeGridSlots = new Set();
 
     body.innerHTML = `
       <div class="shockwock-hud"><span>Time: <strong data-time>${timeLeft}</strong>s</span><span>Hits: <strong data-hits>0</strong></span><span>Accuracy: <strong data-acc>100%</strong></span></div>
@@ -153,23 +154,38 @@
       arena.appendChild(target);
     };
 
+    const emptyGridSlots = () => Array.from({ length: 9 }, (_, index) => index).filter((index) => !activeGridSlots.has(index));
+
+    const spawnGridTarget = () => {
+      const slots = emptyGridSlots();
+      if (!slots.length) return;
+      const slot = slots[Math.floor(Math.random() * slots.length)];
+      activeGridSlots.add(slot);
+      const cell = document.createElement("button");
+      cell.className = "shockwock-grid-cell active";
+      cell.type = "button";
+      cell.style.gridColumn = String((slot % 3) + 1);
+      cell.style.gridRow = String(Math.floor(slot / 3) + 1);
+      cell.innerHTML = `<img src="${src}" alt="Shockwock target">`;
+      cell.addEventListener("click", (event) => {
+        event.stopPropagation();
+        hits += 1;
+        shots += 1;
+        showFloat(event.clientX, event.clientY, "+1");
+        updateHud();
+        activeGridSlots.delete(slot);
+        cell.remove();
+        activeTargets = activeTargets.filter((item) => item !== cell);
+        spawnGridTarget();
+      });
+      activeTargets.push(cell);
+      arena.appendChild(cell);
+    };
+
     const spawnGrid = () => {
       clearTargets();
-      for (let index = 0; index < 9; index += 1) {
-        const cell = document.createElement("button");
-        cell.className = "shockwock-grid-cell";
-        cell.type = "button";
-        cell.innerHTML = `<img src="${src}" alt="Shockwock target">`;
-        cell.addEventListener("click", (event) => {
-          hits += 1;
-          shots += 1;
-          showFloat(event.clientX, event.clientY, "+1");
-          updateHud();
-          spawnGrid();
-        });
-        activeTargets.push(cell);
-        arena.appendChild(cell);
-      }
+      activeGridSlots = new Set();
+      for (let index = 0; index < 3; index += 1) spawnGridTarget();
     };
 
     arena.addEventListener("click", () => {
@@ -212,41 +228,69 @@
   const openClicker = () => {
     let clicks = 0;
     let shockwocks = 0;
+    let totalShockwocks = 0;
+    let rebirths = 0;
+    let baseRate = 1;
     let clickPower = 1;
     let critChance = 0.05;
+    let critMultiplier = 5;
     let autoClickers = 0;
-    let timeLeft = 60;
-    const { body } = gameShell("Shockwock Clicker", "60 second run");
+    let autoPower = 1;
+    let elapsed = 0;
+    const { body } = gameShell("Shockwock Clicker", "Endless session");
     body.innerHTML = `
-      <div class="shockwock-hud"><span>Time: <strong data-time>60</strong>s</span><span>Shockwocks: <strong data-score>0</strong></span><span>Clicks: <strong data-clicks>0</strong></span></div>
+      <div class="shockwock-hud"><span>Time: <strong data-time>0:00</strong></span><span>Shockwocks: <strong data-score>0</strong></span><span>Total: <strong data-total>0</strong></span><span>Rebirths: <strong data-rebirths>0</strong></span></div>
       <button class="shockwock-clicker-button" type="button" aria-label="Click shockwock"><img src="${src}" alt=""></button>
       <div class="shockwock-shop">
-        <button type="button" data-buy="power">Power +1 <span data-power-cost>25</span></button>
-        <button type="button" data-buy="crit">Crit +5% <span data-crit-cost>40</span></button>
-        <button type="button" data-buy="auto">Auto +1/s <span data-auto-cost>60</span></button>
+        <button type="button" data-buy="power">Click Power +1 <span data-power-cost>25</span></button>
+        <button type="button" data-buy="crit">Crit Chance +5% <span data-crit-cost>40</span></button>
+        <button type="button" data-buy="critPower">Crit Power +1x <span data-crit-power-cost>120</span></button>
+        <button type="button" data-buy="auto">Auto Clicker +1 <span data-auto-cost>60</span></button>
+        <button type="button" data-buy="autoPower">Auto Power +1 <span data-auto-power-cost>180</span></button>
+        <button type="button" data-buy="rebirth">Rebirth for +1 base <span data-rebirth-cost>1000</span></button>
       </div>
+      <p class="shockwock-clicker-note">Base ${baseRate}/click · Click power ${clickPower} · Auto ${autoClickers * autoPower}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}</p>
     `;
     const scoreNode = body.querySelector("[data-score]");
+    const totalNode = body.querySelector("[data-total]");
     const clicksNode = body.querySelector("[data-clicks]");
     const timeNode = body.querySelector("[data-time]");
+    const rebirthNode = body.querySelector("[data-rebirths]");
+    const noteNode = body.querySelector(".shockwock-clicker-note");
     const powerCostNode = body.querySelector("[data-power-cost]");
     const critCostNode = body.querySelector("[data-crit-cost]");
+    const critPowerCostNode = body.querySelector("[data-crit-power-cost]");
     const autoCostNode = body.querySelector("[data-auto-cost]");
+    const autoPowerCostNode = body.querySelector("[data-auto-power-cost]");
+    const rebirthCostNode = body.querySelector("[data-rebirth-cost]");
     const button = body.querySelector(".shockwock-clicker-button");
     let powerCost = 25;
     let critCost = 40;
+    let critPowerCost = 120;
     let autoCost = 60;
+    let autoPowerCost = 180;
+    let rebirthCost = 1000;
+
+    const formatTime = (seconds) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
     const update = () => {
       scoreNode.textContent = String(Math.floor(shockwocks));
+      totalNode.textContent = String(Math.floor(totalShockwocks));
       clicksNode.textContent = String(clicks);
+      timeNode.textContent = formatTime(elapsed);
+      rebirthNode.textContent = String(rebirths);
       powerCostNode.textContent = String(powerCost);
       critCostNode.textContent = String(critCost);
+      critPowerCostNode.textContent = String(critPowerCost);
       autoCostNode.textContent = String(autoCost);
+      autoPowerCostNode.textContent = String(autoPowerCost);
+      rebirthCostNode.textContent = String(rebirthCost);
+      noteNode.textContent = `Base ${baseRate}/click · Click power ${clickPower} · Auto ${autoClickers * autoPower}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}`;
     };
 
     const addShockwocks = (amount, x = window.innerWidth / 2, y = window.innerHeight / 2, label = null) => {
       shockwocks += amount;
+      totalShockwocks += amount;
       showFloat(x, y, label ?? `+${amount}`);
       update();
     };
@@ -254,11 +298,12 @@
     button.addEventListener("click", (event) => {
       clicks += 1;
       const crit = Math.random() < critChance;
-      const amount = clickPower * (crit ? 5 : 1);
+      const amount = baseRate * clickPower * (crit ? critMultiplier : 1);
       button.classList.remove("pop");
       void button.offsetWidth;
       button.classList.add("pop");
       addShockwocks(amount, event.clientX, event.clientY, crit ? `CRIT +${amount}` : `+${amount}`);
+      window.setTimeout(() => button.classList.remove("pop"), 120);
     });
 
     body.querySelector('[data-buy="power"]').addEventListener("click", () => {
@@ -271,8 +316,15 @@
     body.querySelector('[data-buy="crit"]').addEventListener("click", () => {
       if (shockwocks < critCost) return;
       shockwocks -= critCost;
-      critChance = Math.min(0.5, critChance + 0.05);
+      critChance = Math.min(0.65, critChance + 0.05);
       critCost = Math.ceil(critCost * 1.9);
+      update();
+    });
+    body.querySelector('[data-buy="critPower"]').addEventListener("click", () => {
+      if (shockwocks < critPowerCost) return;
+      shockwocks -= critPowerCost;
+      critMultiplier += 1;
+      critPowerCost = Math.ceil(critPowerCost * 2.2);
       update();
     });
     body.querySelector('[data-buy="auto"]').addEventListener("click", () => {
@@ -282,20 +334,44 @@
       autoCost = Math.ceil(autoCost * 2.1);
       update();
     });
+    body.querySelector('[data-buy="autoPower"]').addEventListener("click", () => {
+      if (shockwocks < autoPowerCost) return;
+      shockwocks -= autoPowerCost;
+      autoPower += 1;
+      autoPowerCost = Math.ceil(autoPowerCost * 2.35);
+      update();
+    });
+    body.querySelector('[data-buy="rebirth"]').addEventListener("click", () => {
+      if (shockwocks < rebirthCost) return;
+      shockwocks = 0;
+      clicks = 0;
+      rebirths += 1;
+      baseRate += 1;
+      clickPower = 1;
+      critChance = 0.05;
+      critMultiplier = 5;
+      autoClickers = 0;
+      autoPower = 1;
+      powerCost = 25 * (rebirths + 1);
+      critCost = 40 * (rebirths + 1);
+      critPowerCost = 120 * (rebirths + 1);
+      autoCost = 60 * (rebirths + 1);
+      autoPowerCost = 180 * (rebirths + 1);
+      rebirthCost = Math.ceil(rebirthCost * 2.5);
+      showFloat(window.innerWidth / 2, window.innerHeight / 2, `REBIRTH ${rebirths}`);
+      update();
+    });
 
     const auto = setInterval(() => {
-      if (autoClickers > 0) addShockwocks(autoClickers, window.innerWidth - 90, 90, `+${autoClickers}/s`);
+      const amount = autoClickers * autoPower;
+      if (amount > 0) addShockwocks(amount, window.innerWidth - 90, 90, `+${amount}/s`);
     }, 1000);
     const timer = setInterval(() => {
-      timeLeft -= 1;
-      timeNode.textContent = String(timeLeft);
-      if (timeLeft <= 0) {
+      elapsed += document.hidden ? 0 : 1;
+      update();
+      if (!document.body.contains(button)) {
         clearInterval(timer);
         clearInterval(auto);
-        resultScreen("Shockwock Clicker", [["Shockwocks", Math.floor(shockwocks)], ["Clicks", clicks], ["Power", clickPower], ["Crit", `${Math.round(critChance * 100)}%`], ["Auto", `${autoClickers}/s`]], openClicker, () => {
-          removeExistingGame();
-          openClicker();
-        });
       }
     }, 1000);
   };
