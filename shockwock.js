@@ -1,6 +1,6 @@
 (() => {
   const src = "https://cdn.discordapp.com/emojis/1513264198962905159.png?size=128&quality=lossless";
-  const modes = ["fade", "bounce", "aim", "clicker"];
+  const modes = ["fade", "bounce", "aim", "clicker", "cps"];
   const mode = modes[Math.floor(Math.random() * modes.length)];
   let fadeClicks = 0;
 
@@ -386,11 +386,82 @@
     }, 1000);
   };
 
+  const runCpsTest = (duration = 10) => {
+    let clicks = 0;
+    let started = false;
+    let ended = false;
+    let timeLeft = duration;
+    let timer = null;
+    const { body } = gameShell("Shockwock CPS Test", "Click as fast as you can.");
+    body.innerHTML = `
+      <div class="shockwock-hud"><span>Time: <strong data-time>${duration}</strong>s</span><span>Clicks: <strong data-clicks>0</strong></span><span>CPS: <strong data-cps>0.00</strong></span></div>
+      <button class="shockwock-clicker-button" type="button" aria-label="Click shockwock as fast as possible"><img src="${src}" alt=""></button>
+      <p class="shockwock-clicker-note">First click starts the timer.</p>
+    `;
+    const timeNode = body.querySelector("[data-time]");
+    const clicksNode = body.querySelector("[data-clicks]");
+    const cpsNode = body.querySelector("[data-cps]");
+    const noteNode = body.querySelector(".shockwock-clicker-note");
+    const button = body.querySelector(".shockwock-clicker-button");
+
+    const update = () => {
+      clicksNode.textContent = String(clicks);
+      cpsNode.textContent = (clicks / Math.max(1, duration - timeLeft)).toFixed(2);
+      timeNode.textContent = String(timeLeft);
+    };
+
+    const finish = () => {
+      ended = true;
+      clearInterval(timer);
+      const cps = (clicks / duration).toFixed(2);
+      resultScreen("Shockwock CPS Test", [["Clicks", clicks], ["Time", `${duration}s`], ["CPS", cps]], () => runCpsTest(duration), openCpsMenu);
+    };
+
+    const start = () => {
+      started = true;
+      noteNode.textContent = "Go go go.";
+      timer = setInterval(() => {
+        timeLeft -= 1;
+        update();
+        if (timeLeft <= 0) finish();
+      }, 1000);
+    };
+
+    button.addEventListener("click", (event) => {
+      if (ended) return;
+      if (!started) start();
+      clicks += 1;
+      button.classList.remove("pop");
+      void button.offsetWidth;
+      button.classList.add("pop");
+      showFloat(event.clientX, event.clientY, "+1");
+      window.setTimeout(() => button.classList.remove("pop"), 120);
+      update();
+    });
+
+    update();
+  };
+
+  const openCpsMenu = () => {
+    const { body } = gameShell("Shockwock CPS Test", "Choose a click speed test length.");
+    body.innerHTML = `
+      <div class="shockwock-actions vertical">
+        <button type="button" data-cps="5">5 seconds</button>
+        <button type="button" data-cps="10">10 seconds</button>
+        <button type="button" data-cps="30">30 seconds</button>
+      </div>
+    `;
+    body.querySelectorAll("[data-cps]").forEach((button) => {
+      button.addEventListener("click", () => runCpsTest(Number(button.dataset.cps)));
+    });
+  };
+
   const activate = () => {
     if (mode === "fade") fadeIn();
     if (mode === "bounce") spawnBouncer();
     if (mode === "aim") openAimMenu();
     if (mode === "clicker") openClicker();
+    if (mode === "cps") openCpsMenu();
   };
 
   const attach = () => {
