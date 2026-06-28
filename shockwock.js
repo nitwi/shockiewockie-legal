@@ -152,7 +152,6 @@
 
   const attach = () => {
     document.querySelectorAll("[data-shockwock]").forEach((element) => {
-      element.title = `Shockwock mode: ${mode}`;
       element.addEventListener("click", activate);
       element.addEventListener("keydown", (event) => {
         if (event.key === "Enter" || event.key === " ") {
