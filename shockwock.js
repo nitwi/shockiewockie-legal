@@ -154,10 +154,11 @@
       arena.appendChild(target);
     };
 
-    const emptyGridSlots = () => Array.from({ length: 9 }, (_, index) => index).filter((index) => !activeGridSlots.has(index));
+    const emptyGridSlots = (excludeSlot = null) => Array.from({ length: 9 }, (_, index) => index).filter((index) => !activeGridSlots.has(index) && index !== excludeSlot);
 
-    const spawnGridTarget = () => {
-      const slots = emptyGridSlots();
+    const spawnGridTarget = (excludeSlot = null) => {
+      let slots = emptyGridSlots(excludeSlot);
+      if (!slots.length) slots = emptyGridSlots();
       if (!slots.length) return;
       const slot = slots[Math.floor(Math.random() * slots.length)];
       activeGridSlots.add(slot);
@@ -176,7 +177,7 @@
         activeGridSlots.delete(slot);
         cell.remove();
         activeTargets = activeTargets.filter((item) => item !== cell);
-        spawnGridTarget();
+        spawnGridTarget(slot);
       });
       activeTargets.push(cell);
       arena.appendChild(cell);
