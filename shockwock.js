@@ -231,6 +231,7 @@
     let shockwocks = 0;
     let totalShockwocks = 0;
     let rebirths = 0;
+    let rebirthMultiplier = 1;
     let baseRate = 1;
     let clickPower = 1;
     let critChance = 0.05;
@@ -250,7 +251,7 @@
         <button type="button" data-buy="autoPower">Auto Power +5/s <span data-auto-power-cost>140</span></button>
         <button type="button" data-buy="rebirth">Rebirth for +1 base <span data-rebirth-cost>1000</span></button>
       </div>
-      <p class="shockwock-clicker-note">Base ${baseRate}/click · Click power ${clickPower} · Auto ${autoClickers * autoPower}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}</p>
+      <p class="shockwock-clicker-note">Rebirth x${rebirthMultiplier} · Click ${rebirthMultiplier * baseRate * clickPower}/click · Auto ${autoClickers * autoPower * rebirthMultiplier}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}</p>
     `;
     const scoreNode = body.querySelector("[data-score]");
     const totalNode = body.querySelector("[data-total]");
@@ -287,7 +288,7 @@
       autoCostNode.textContent = String(autoCost);
       autoPowerCostNode.textContent = String(autoPowerCost);
       rebirthCostNode.textContent = String(rebirthCost);
-      noteNode.textContent = `Base ${baseRate}/click · Click power ${clickPower} · Auto ${autoClickers * autoPower}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}`;
+      noteNode.textContent = `Rebirth x${rebirthMultiplier} · Click ${rebirthMultiplier * baseRate * clickPower}/click · Auto ${autoClickers * autoPower * rebirthMultiplier}/s · Crit ${Math.round(critChance * 100)}% x${critMultiplier}`;
     };
 
     const addShockwocks = (amount, x = window.innerWidth / 2, y = window.innerHeight / 2, label = null) => {
@@ -300,7 +301,7 @@
     button.addEventListener("click", (event) => {
       clicks += 1;
       const crit = Math.random() < critChance;
-      const amount = baseRate * clickPower * (crit ? critMultiplier : 1);
+      const amount = rebirthMultiplier * baseRate * clickPower * (crit ? critMultiplier : 1);
       button.classList.remove("pop");
       void button.offsetWidth;
       button.classList.add("pop");
@@ -348,12 +349,13 @@
       shockwocks = 0;
       clicks = 0;
       rebirths += 1;
-      baseRate += 1 + Math.floor(rebirths / 2);
+      rebirthMultiplier = 2 ** rebirths;
+      baseRate = 1;
       clickPower = 1;
       critChance = 0.05;
       critMultiplier = 5;
       autoClickers = 0;
-      autoPower = 5 + rebirths * 2;
+      autoPower = 5;
       autoFraction = 0;
       powerCost = 20 * (rebirths + 1);
       critCost = 35 * (rebirths + 1);
@@ -361,12 +363,12 @@
       autoCost = 45 * (rebirths + 1);
       autoPowerCost = 140 * (rebirths + 1);
       rebirthCost = 1000 * (10 ** rebirths);
-      showFloat(window.innerWidth / 2, window.innerHeight / 2, `REBIRTH ${rebirths}`);
+      showFloat(window.innerWidth / 2, window.innerHeight / 2, `REBIRTH x${rebirthMultiplier}`);
       update();
     });
 
     const auto = setInterval(() => {
-      const perSecond = autoClickers * autoPower;
+      const perSecond = autoClickers * autoPower * rebirthMultiplier;
       if (perSecond <= 0) return;
       autoFraction += perSecond / 4;
       const amount = Math.floor(autoFraction);

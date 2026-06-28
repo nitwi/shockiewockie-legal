@@ -180,6 +180,7 @@ body {
   position: relative;
   width: min(760px, calc(100vw - 32px));
   padding: 24px;
+  text-align: center;
   background: rgba(2, 6, 23, 0.9);
   border: 1px solid var(--border);
   border-radius: 26px;
@@ -326,6 +327,7 @@ body {
 .shockwock-clicker-note {
   margin: 14px 0 0;
   font-size: 0.92rem;
+  text-align: center;
 }
 
 .shockwock-clicker-title {
@@ -345,6 +347,8 @@ body {
 }
 
 .shockwock-clicker-button {
+  display: block;
+  margin: 0 auto;
   width: min(240px, 60vw);
   height: min(240px, 60vw);
   border: 0;
