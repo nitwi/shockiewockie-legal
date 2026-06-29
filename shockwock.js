@@ -119,11 +119,11 @@
       <div class="shockwock-stats">${stats.map(([label, value]) => `<div><strong>${value}</strong><span>${label}</span></div>`).join("")}</div>
       <div class="shockwock-actions">
         <button type="button" data-retry>Retry</button>
-        <button type="button" data-menu>Choose mode</button>
+        ${menu ? '<button type="button" data-menu>Choose mode</button>' : ''}
       </div>
     `;
     body.querySelector("[data-retry]").addEventListener("click", retry);
-    body.querySelector("[data-menu]").addEventListener("click", menu);
+    if (menu) body.querySelector("[data-menu]").addEventListener("click", menu);
   };
 
   const runAimMode = ({ name, duration, layout }) => {
@@ -558,10 +558,7 @@
 
     const finish = (won) => {
       cancelAnimationFrame(animation);
-      resultScreen("Shockwock Brick Breaker", [[won ? "Cleared" : "Score", won ? "All bricks" : score], ["Score", score], ["Lives", lives]], openBrickBreaker, () => {
-        removeExistingGame();
-        openBrickBreaker();
-      });
+      resultScreen("Shockwock Brick Breaker", [[won ? "Cleared" : "Score", won ? "All bricks" : score], ["Score", score], ["Lives", lives]], openBrickBreaker);
     };
 
     const tick = () => {
@@ -675,10 +672,7 @@
     };
     const finish = (won) => {
       cancelAnimationFrame(animation);
-      resultScreen("Shockwock Pong", [[won ? "Winner" : "Winner", won ? "You" : "Bot"], ["Score", `${playerScore}-${botScore}`], ["Last rally", rally]], openPong, () => {
-        removeExistingGame();
-        openPong();
-      });
+      resultScreen("Shockwock Pong", [[won ? "Winner" : "Winner", won ? "You" : "Bot"], ["Score", `${playerScore}-${botScore}`], ["Last rally", rally]], openPong);
     };
 
     arena.addEventListener("mousemove", (event) => setPlayer(event.clientY));
