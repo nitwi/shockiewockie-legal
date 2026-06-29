@@ -1,6 +1,6 @@
 (() => {
   const src = "https://cdn.discordapp.com/emojis/1513264198962905159.png?size=128&quality=lossless";
-  const modes = ["fade", "bounce", "aim", "clicker", "cps", "breaker"];
+  const modes = ["fade", "bounce", "aim", "clicker", "cps", "breaker", "pong"];
   const mode = modes[Math.floor(Math.random() * modes.length)];
   let fadeClicks = 0;
 
@@ -611,6 +611,135 @@
     tick();
   };
 
+  const openPong = () => {
+    const { body } = gameShell("Shockwock Pong", "First to 5. The bot is beatable, probably.");
+    body.innerHTML = `
+      <div class="shockwock-hud"><span>You: <strong data-player>0</strong></span><span>Bot: <strong data-bot>0</strong></span><span>Rally: <strong data-rally>0</strong></span></div>
+      <div class="shockwock-pong" tabindex="0" aria-label="Shockwock Pong game area">
+        <img class="shockwock-pong-ball" src="${src}" alt="">
+        <div class="shockwock-pong-paddle player"><img src="${src}" alt=""></div>
+        <div class="shockwock-pong-paddle bot"><img src="${src}" alt=""></div>
+      </div>
+      <p class="shockwock-clicker-note">Move mouse or drag/tap vertically. Click the arena to serve.</p>
+    `;
+
+    const arena = body.querySelector(".shockwock-pong");
+    const ball = body.querySelector(".shockwock-pong-ball");
+    const player = body.querySelector(".shockwock-pong-paddle.player");
+    const bot = body.querySelector(".shockwock-pong-paddle.bot");
+    const playerScoreNode = body.querySelector("[data-player]");
+    const botScoreNode = body.querySelector("[data-bot]");
+    const rallyNode = body.querySelector("[data-rally]");
+    let playerScore = 0;
+    let botScore = 0;
+    let rally = 0;
+    let launched = false;
+    let ballX = 0;
+    let ballY = 0;
+    let dx = 4;
+    let dy = 2.6;
+    let playerY = 0;
+    let botY = 0;
+    let botError = 0;
+    let animation = null;
+
+    const bounds = () => arena.getBoundingClientRect();
+    const updateHud = () => {
+      playerScoreNode.textContent = String(playerScore);
+      botScoreNode.textContent = String(botScore);
+      rallyNode.textContent = String(rally);
+    };
+    const render = () => {
+      player.style.transform = `translateY(${playerY}px)`;
+      bot.style.transform = `translateY(${botY}px)`;
+      ball.style.transform = `translate(${ballX}px, ${ballY}px) rotate(${performance.now() / 5}deg)`;
+    };
+    const resetBall = (direction = 1) => {
+      const rect = bounds();
+      ballX = rect.width / 2 - 16;
+      ballY = rect.height / 2 - 16;
+      playerY = Math.max(0, rect.height / 2 - 55);
+      botY = Math.max(0, rect.height / 2 - 55);
+      dx = direction * (3.8 + Math.random() * 0.8);
+      dy = (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 1.6);
+      botError = (Math.random() - 0.5) * 90;
+      rally = 0;
+      launched = false;
+      updateHud();
+      render();
+    };
+    const setPlayer = (clientY) => {
+      const rect = bounds();
+      playerY = Math.max(0, Math.min(rect.height - 110, clientY - rect.top - 55));
+      render();
+    };
+    const finish = (won) => {
+      cancelAnimationFrame(animation);
+      resultScreen("Shockwock Pong", [[won ? "Winner" : "Winner", won ? "You" : "Bot"], ["Score", `${playerScore}-${botScore}`], ["Last rally", rally]], openPong, () => {
+        removeExistingGame();
+        openPong();
+      });
+    };
+
+    arena.addEventListener("mousemove", (event) => setPlayer(event.clientY));
+    arena.addEventListener("touchmove", (event) => {
+      event.preventDefault();
+      setPlayer(event.touches[0].clientY);
+    }, { passive: false });
+    arena.addEventListener("click", () => { launched = true; });
+
+    const tick = () => {
+      const rect = bounds();
+      if (launched) {
+        ballX += dx;
+        ballY += dy;
+
+        if (ballY <= 0 || ballY >= rect.height - 32) dy *= -1;
+
+        const targetBotY = Math.max(0, Math.min(rect.height - 110, ballY - 39 + botError));
+        const botSpeed = 2.8 + Math.min(1.4, rally * 0.05);
+        if (Math.abs(targetBotY - botY) > botSpeed) botY += targetBotY > botY ? botSpeed : -botSpeed;
+        else botY = targetBotY;
+        if (Math.random() < 0.01) botError = (Math.random() - 0.5) * 120;
+
+        const ballRect = ball.getBoundingClientRect();
+        const playerRect = player.getBoundingClientRect();
+        const botRect = bot.getBoundingClientRect();
+        if (dx < 0 && ballRect.left <= playerRect.right && ballRect.right >= playerRect.left && ballRect.bottom >= playerRect.top && ballRect.top <= playerRect.bottom) {
+          dx = Math.abs(dx) + 0.18;
+          dy += ((ballRect.top + 16) - (playerRect.top + 55)) / 18;
+          rally += 1;
+          updateHud();
+          burstConfetti(playerRect.right, ballRect.top + 16);
+        }
+        if (dx > 0 && ballRect.right >= botRect.left && ballRect.left <= botRect.right && ballRect.bottom >= botRect.top && ballRect.top <= botRect.bottom) {
+          dx = -Math.abs(dx) - 0.12;
+          dy += ((ballRect.top + 16) - (botRect.top + 55)) / 22;
+          rally += 1;
+          updateHud();
+        }
+
+        if (ballX < -40) {
+          botScore += 1;
+          if (botScore >= 5) return finish(false);
+          resetBall(1);
+        }
+        if (ballX > rect.width + 40) {
+          playerScore += 1;
+          if (playerScore >= 5) return finish(true);
+          resetBall(-1);
+        }
+      }
+      updateHud();
+      render();
+      animation = requestAnimationFrame(tick);
+    };
+
+    updateHud();
+    resetBall(Math.random() < 0.5 ? 1 : -1);
+    tick();
+  };
+
   const activate = () => {
     if (mode === "fade") fadeIn();
     if (mode === "bounce") spawnBouncer();
@@ -618,6 +747,7 @@
     if (mode === "clicker") openClicker();
     if (mode === "cps") openCpsMenu();
     if (mode === "breaker") openBrickBreaker();
+    if (mode === "pong") openPong();
   };
 
   const attach = () => {
